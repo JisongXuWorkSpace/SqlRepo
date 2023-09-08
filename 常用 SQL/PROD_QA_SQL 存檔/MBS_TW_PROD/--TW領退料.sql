@@ -1,0 +1,45 @@
+-- TW 領退料
+
+資料已更改為領料狀態，請做完正確領退料後，
+
+請勿其他或後續操作並回覆MIS，謝謝。
+
+已與USER用Email聯絡，故在此先做結案。
+
+
+時間:2021/02/22 18:14:25
+
+SELECT MT.PROCESSCODE ,mt.return_time,mt.closetime, MT.* FROM RPMMT MT  WHERE 1=1 AND MT.MTNO='MT96103745';
+
+select mt.processcode,mt.closetime,mt.close_emp_no,mt.* from rpmmt mt where mt.companycode='20' and mt.mtno in('MT96103745');
+
+SELECT * FROM RPM_FACT_REPAIR FR WHERE 1=1 AND FR.MT_NO='MT96103745';
+
+SELECT * FROM RPMMTCHARGE RMC WHERE 1=1 AND RMC.MTNO='MT96103745';
+
+
+SELECT * FROM RPM_MAINT_FRAME
+
+
+
+processcode 為9 要確認 closetime and closeEmpNo 要沒值
+close time 沒值
+
+--UPDATE SQL
+
+
+
+UPDATE DBS_MAJ.rpmmt SET PROCESSCODE='6' WHERE mtno='MT96103745' AND COMPANYCODE='20';
+
+
+
+UPDATE DBS_MAJ.RPMMT SET   APPLYPARTSTIME=to_date('2021/02/22 18:14:25', 'YYYY/MM/DD HH24:MI:SS'), PROCESSCODE='C' WHERE MTNO='MT96103745' AND COMPANYCODE='20';
+UPDATE DBS_MAJ.RPM_FACT_REPAIR SET   APPLYPARTSTIME=to_date('2021/02/22 18:14:25', 'YYYY/MM/DD HH24:MI:SS') WHERE MT_NO='MT96103745' AND COMPANY_CODE='20';
+
+
+
+select RETURNNO,A.CHARGENO,A.TOTALAMOUNT,REPAIRCODE,PROCESSCODE,COMPLETETIME,COMPLETENO from DBS_MAJ.RPMMT A where 1=1 and companycode='20' and mtno ='MT96103745';
+
+
+
+

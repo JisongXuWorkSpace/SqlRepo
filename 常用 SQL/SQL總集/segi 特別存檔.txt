@@ -1,0 +1,76 @@
+sql.append("  with PRESENCE as                                                     ");
+		sql.append("  (select a.Emp_No,                                                    ");
+		sql.append("           Presence_Date,                                              ");
+		sql.append("           'CLOCK_ON' as type,                                         ");
+		sql.append("           sr.opra_ord_no as slip_no,                                  ");
+		sql.append("           START_TIME as CLOCK_TIME,                                   ");
+		sql.append("           START_ADDRESS as address,                                   ");
+		sql.append("           START_LOCATION as location,                                 ");
+		sql.append("           DISTANCE_BETWEEN_MT_AND_START as DISTANCE                   ");
+		sql.append("      from AMS_PRESENCE a, SI_RECORD sr                                ");
+		sql.append("     where a.emp_no = sr.emp_no                                        ");
+		sql.append("       and to_date(a.presence_date || a.end_time) = sr.server_dt       ");
+		sql.append("       and STATUS = 2                                                  ");
+		sql.append("       and nvl(START_STATUS, '正常') <> '正常'                         ");
+		sql.append("    union                                                              ");
+		sql.append("    select a.Emp_No,                                                   ");
+		sql.append("           Presence_Date,                                              ");
+		sql.append("           'CLOCK_OFF' as type,                                        ");
+		sql.append("           sr.opra_ord_no,                                             ");
+		sql.append("           END_TIME,                                                   ");
+		sql.append("           END_ADDRESS,                                                ");
+		sql.append("           END_LOCATION,                                               ");
+		sql.append("           DISTANCE_BETWEEN_MT_AND_END                                 ");
+		sql.append("      from AMS_PRESENCE a, SI_RECORD sr                                ");
+		sql.append("     where a.emp_no = sr.emp_no                                        ");
+		sql.append("       and to_date(a.presence_date || a.end_time) = sr.server_dt       ");
+		sql.append("       and STATUS = 2                                                  ");
+		sql.append("       and nvl(END_STATUS, '正常') <> '正常')                          ");
+		sql.append("  select count(0) over(),                                              ");
+		sql.append("         '單位',                                                       ");
+		sql.append("         fe.emp_no,                                                    ");
+		sql.append("         fe.emp_name,                                                  ");
+		sql.append("         fs.slip_no,                                                   ");
+		sql.append("         AP.type,                                                      ");
+		sql.append("         to_char(fs.work_start_Date, 'dd-mon-yy hh24:mi'),             ");
+		sql.append("         fs.mt_Address,--工單地址                                      ");
+		sql.append("         fs.mt_location,--工單地址座標                                 ");
+		sql.append("         AP.address, --APP打卡地址                                     ");
+		sql.append("         AP.location,--APP打卡座標(緯度,精度)                          ");
+		sql.append("         AP.DISTANCE                                                   ");
+		sql.append("    from fix_service fs, FIX_ASSIGN FA, fix_empdata fe, PRESENCE AP    ");
+		sql.append("  where 1 = 1                                                          ");
+		sql.append("     and fs.company_code = fa.company_code                             ");
+		sql.append("     and fs.slip_no = fa.slip_no                                       ");
+		sql.append("     and fs.emp_no = fe.emp_no                                         ");
+		if(StringUtils.isNotBlank(daovo.getCompanyCode())){
+			sql.append("     and fs.company_code = :companyCode                                ");
+			paraMap.put("companyCode", daovo.getCompanyCode());
+		}
+		sql.append("     and AP.Emp_No = fs.emp_no                                         ");
+		sql.append("     and AP.slip_no = fa.slip_no                                       ");
+		sql.append("     and fa.parking_start_date is not null                             ");
+		sql.append("     and fa.parking_end_date is not null                               ");
+		sql.append("     and AP.location is not null                                       ");
+		if(StringUtils.isNotBlank(daovo.getStartTime())){
+			sql.append("     and AP.CLOCK_TIME >= to_date(:startDate, 'yymmdd')                ");
+			paraMap.put("startDate", daovo.getStartTime());
+		}
+		if(StringUtils.isNotBlank(daovo.getEndTime())){
+			sql.append("     and AP.CLOCK_TIME < to_date(:endDate, 'yymmdd')                   ");
+			paraMap.put("endDate", daovo.getEndTime());
+		}	
+		if(StringUtils.isNotBlank(daovo.getInlegalDistance())){
+			sql.append("     and distance_between_mt_and_Arrive > :inlegalDistance             ");
+			paraMap.put("inlegalDistance", daovo.getInlegalDistance());
+		}
+		if(daovo.getOrgOidList() != null && daovo.getOrgOidList().size()>0){
+			sql.append("     and exists (select 0                                              ");
+			sql.append("            from fix_org_org_grp foo, fix_org_relation_grp fog         ");
+			sql.append("           where fe.emp_no = fog.emp_no                                ");
+			sql.append("             and foo.org_oid = fog.org_oid                             ");
+			sql.append("             and fe.bu_id = fog.bu_id                                  ");
+			sql.append("             and foo.bu_id = fog.bu_id)                                ");
+			sql.append("             and foo.org_oid in (:orgOid))                             ");
+			paraMap.put("orgOid", daovo.getOrgOidList());
+		}

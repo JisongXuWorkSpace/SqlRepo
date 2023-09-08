@@ -1,0 +1,48 @@
+*----- 組合料品 -----*
+SELECT * FROM MSTPACKET
+
+
+
+
+*----- LOG -----*
+SELECT * FROM EAI_TRANSMIT_LOG
+
+
+
+*----- 查詢庫部有價物品 -----*
+
+select i.*   
+  from rpm_price r, ivconhand i
+where r.itemno = i.itemno
+    and r.sale_price is not null
+    and i.onhand > 0
+    and i.citycode = 'TCA'
+    and i.companycode='20' 
+	
+	
+*----- 當天稅率 -----*
+SELECT e.exchangerate
+  FROM Mstcompany      m,
+       Mstcurrencycode f,
+       Mstcurrencycode b,
+       Mstexchangerate e
+ WHERE e.exlineno = f.lineno
+   AND b.currencycode = m.currencycode
+   AND e.blineno = b.lineno
+   AND f.currencycode = 'NTD'
+   AND m.companycode = '20'
+   AND to_char(exchangeratedate, 'MMDDYY') = '071719'
+
+
+SELECT * FROM Mstexchangerate MC WHERE 1=1 AND MC.EXCHANGERATEDATE > TO_DATE('080219 13:18:24','MMddyy hh24:mi:ss')
+
+
+*----- 白名單 -----*
+
+SELECT * FROM MST_TABLE_MAPPING MTM 
+WHERE 1=1
+AND MTM.TABLE_NAME LIKE 'COMMON-SERVLET'
+AND MTM.TABLE_FIELD LIKE 'SAFE-IP'
+
+*----- WEBMETHOD 設定-----*
+select * from mst_table_mapping where table_name='COMMON' and table_field='WEBMETHOD' AND TABLE_FIELD_VALUE LIKE 'FTP%'

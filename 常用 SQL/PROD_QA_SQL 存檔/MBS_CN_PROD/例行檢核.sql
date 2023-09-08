@@ -1,0 +1,3 @@
+-- ®“¶Ê¿ÀÆ÷
+
+SELECT * FROM SYS_AUTOMATIC_CHECK

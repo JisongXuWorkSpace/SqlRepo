@@ -1,0 +1,55 @@
+-- TW 領退料
+
+資料已更改為領料狀態，請做完正確領退料後，
+
+請勿其他或後續操作並回覆MIS，謝謝。
+
+已與USER用Email聯絡，故在此先做結案。
+
+
+時間:2019/10/08 19:04:01
+
+SELECT MT.PROCESSCODE ,mt.return_time,mt.closetime, MT.* FROM RPMMT MT  WHERE 1=1 AND MT.MTNO='MT66953904';
+
+select mt.processcode,mt.closetime,mt.close_emp_no,mt.* from rpmmt mt where mt.companycode='20' and mt.mtno in('MT66953904');
+
+SELECT * FROM RPM_FACT_REPAIR FR WHERE 1=1 AND FR.MT_NO='MT66953904';
+
+SELECT * FROM RPM_FACT_REPAIR_NOW FR WHERE 1=1 AND FR.MT_NO='MT66953904';
+
+SELECT * FROM RPMMTCHARGE RMC WHERE 1=1
+AND RMC.MTNO='MT66953904'
+
+
+SELECT * FROM RPM_MAINT_FRAME
+
+
+
+
+processcode 為9 要確認 closetime and closeEmpNo 要沒值
+close time 沒值
+
+--UPDATE SQL
+
+
+
+UPDATE DBS_MAJ.rpmmt SET PROCESSCODE='6' WHERE mtno='MT66953904' AND COMPANYCODE='20';
+
+
+
+UPDATE DBS_MAJ.RPMMT SET   APPLYPARTSTIME=to_date('2019/10/08 19:04:01', 'YYYY/MM/DD HH24:MI:SS'), PROCESSCODE='C' WHERE MTNO='MT66953904' AND COMPANYCODE='20';
+UPDATE DBS_MAJ.RPM_FACT_REPAIR SET   APPLYPARTSTIME=to_date('2019/10/08 19:04:01', 'YYYY/MM/DD HH24:MI:SS') WHERE MT_NO='MT66953904' AND COMPANY_CODE='20';
+UPDATE DBS_MAJ.RPM_FACT_REPAIR_NOW SET APPLYPARTSTIME=to_date('2019/10/08 19:04:01', 'YYYY/MM/DD HH24:MI:SS') WHERE MT_NO='MT66953904' AND COMPANY_CODE='20';
+
+
+
+select RETURNNO,A.CHARGENO,A.TOTALAMOUNT,REPAIRCODE,PROCESSCODE,COMPLETETIME,COMPLETENO from DBS_MAJ.RPMMT A where 1=1 and companycode='20' and mtno ='MT66953904';
+
+
+SELECT * FROM RPM_SERIALNO WHERE 1=1 AND MTNO='MT97912256'
+
+
+ select * from rpmrequestparts where 1=1 and mtno='MT97911549'
+ select * from rpmprocesscode
+ 
+ update DBS_MAJ.rpmmt set processcode='C' where companycode='20' and mtno in('MT3S906255','MT66953904');

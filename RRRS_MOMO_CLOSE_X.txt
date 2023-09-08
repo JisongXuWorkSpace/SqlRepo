@@ -1,0 +1,43 @@
+SELECT RTD.COMPANY_CODE,
+       RTD.RT_NO,
+       RTD.SEQ_NO,
+       RTD.Refund_Id,
+       RTD.Vendor_Code,
+       RTD.return_code,
+       RTD.return_reason,
+       RTD.DISCUSSION,
+       RTT.Slip_No,
+       TBS_MAJ.GET_WORK_DATE(RT.Create_Time, 9, RT.Company_Code)
+  FROM DBS_MAJ.RPM_RT RT,
+       DBS_MAJ.RPM_RT_DETAIL RTD,
+       (SELECT ROW_NUMBER() OVER(PARTITION BY T.COMPANY_CODE, T.RT_NO, T.SEQ_NO ORDER BY T.Create_Time, T.Slip_No) AS RTT_NO,
+               T.COMPANY_CODE,
+               T.RT_NO,
+               T.SEQ_NO,
+               T.Slip_No
+          FROM DBS_MAJ.RPM_RT_TRANS T
+         WHERE 1 = 1
+           AND T.SLIP_TYPE = 'CC') RTT
+ WHERE 1 = 1
+   AND RT.COMPANY_CODE = RTD.COMPANY_CODE
+   AND RT.RT_NO = RTD.RT_NO
+   AND (RT.credit_type is null or RT.credit_type in ('B2')) --銷退憑證
+   AND (RT.rt_slip_type is null or RT.rt_slip_type in ('CC')) -- 銷退類型
+   AND exists
+ (SELECT 1
+          FROM DBS_MAJ.mst_business_rule
+         where table_name = 'OPHUCN'
+           AND TABLE_FIELD = 'CUST_MOMO'
+           AND table_field_value = rt.customer_abbname)
+   AND RTD.Refund_Id IS NOT NULL
+   AND RTD.COMPANY_CODE = RTT.COMPANY_CODE(+)
+   AND RTD.RT_NO = RTT.RT_NO(+)
+   AND RTD.SEQ_NO = RTT.SEQ_NO(+)
+   AND RTT.RTT_NO(+) = '1'
+   AND RT.Process_Code IN ('X')
+   AND TBS_MAJ.GET_WORK_DATE(RT.Create_Time, 0, RT.Company_Code) <= SYSDATE
+   AND RTD.Vendor_Code IN ('9618') -- vender 
+   AND RTD.Order_Source IN ('consign', 'trans') -- 來源
+   AND (RTD.Close_Transflag IS NULL OR
+       RTD.Close_Transflag IN ('O'))
+ ORDER BY RTD.Company_Code, RTD.Rt_No, RTD.Seq_No

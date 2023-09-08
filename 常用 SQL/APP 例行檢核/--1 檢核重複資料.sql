@@ -1,0 +1,110 @@
+-- 1. 檢核遺失資料
+
+SELECT * FROM (
+SELECT emp_no, TO_CHAR(work_start_time,'YYYY-MM-DD HH24:MI:SS') AS work_start_time, work_line_No, 
+       sum(DECODE(operation_type, '04',1,0)) "T04",
+       sum(DECODE(operation_type, '05',1,0)) "T05",       
+       sum(DECODE(operation_type, '06',1,0)) "T06",
+       sum(DECODE(operation_type, '08',1,0)) "T08",              
+       sum(DECODE(operation_type, '11',1,0)) "T11"
+FROM  TBS_MAJ.fix_app_emp_location
+WHERE work_start_time >= TRUNC(SYSDATE-10)
+AND work_start_time IS NOT NULL
+GROUP BY emp_no, TO_CHAR(work_start_time,'YYYY-MM-DD HH24:MI:SS'), work_line_No
+) WHERE (T04 =0 AND T06>=1 AND T11=0) 
+ORDER BY emp_no, work_start_time, work_line_No;
+
+
+
+SELECT A.*
+  FROM (SELECT emp_no,
+              work_start_time,
+               work_line_No,
+               MT_SLIP_NO,
+               sum(DECODE(operation_type, '04', 1, 0)) "T04",
+               sum(DECODE(operation_type, '05', 1, 0)) "T05",
+               sum(DECODE(operation_type, '06', 1, 0)) "T06",
+               sum(DECODE(operation_type, '08', 1, 0)) "T08",
+               sum(DECODE(operation_type, '11', 1, 0)) "T11"
+          FROM TBS_MAJ.fix_app_emp_location 
+         WHERE work_start_time >= TRUNC(SYSDATE - 7)
+           AND work_start_time IS NOT NULL
+         GROUP BY emp_no, work_start_time, work_line_No,MT_SLIP_NO) A
+WHERE (T04 >= 1 AND T06 = 0 AND T11 = 0)
+--(異常未回的04)
+   AND EXISTS
+(SELECT 1
+          FROM FIX_APP_EMP_LOCATION EL
+         WHERE 1 = 1
+           AND EL.EMP_NO = A.EMP_NO
+           AND EL.OPERATION_TYPE = '04'
+           AND ((EL.WORK_START_TIME = A.WORK_START_TIME AND
+               EL.WORK_LINE_NO > A.WORK_LINE_NO) OR
+               (EL.WORK_START_TIME > A.WORK_START_TIME)))
+
+
+11	C05480	2020/9/28 上午 08:44:51	1	S200914032	1	0	0	0	0
+4	C05373	2020/9/28 下午 04:13:07	1	S200829003	1	0	0	0	0
+1	C05450	2020/9/29 上午 08:31:13	1	S200902001	1	0	0	0	0
+8	C05490	2020/9/29 上午 08:57:29	1	S200921030	1	0	0	0	0
+9	C05237	2020/9/29 上午 09:24:15	1	S200903054	1	0	0	0	0
+7	C05197	2020/9/30 上午 08:22:38	1	S200903054	1	0	0	0	0-- 重複04工單 工時正常
+5	C05374	2020/9/30 上午 10:01:56	1	S200909052	1	4	0	0	0-- 重複04工單 工時正常
+
+2	C02379	2020/9/30 上午 08:07:53	1	R200925005	1	1	0	0	0 -- 9/30 異常
+6	C05008	2020/9/30 下午 03:37:28	1	R200929010	1	1	0	0	0 -- 06早於04 異常時間 09/30 ~ 10/03
+
+
+
+10	C04106	2020/10/1 下午 08:17:38	1	R200831009	1	1	0	0	0
+3	C05008	2020/10/2 上午 08:05:29	1	R201002001	1	1	0	0	0.
+
+
+SELECT *
+  FROM FIX_APP_EMP_LOCATION AL
+ WHERE AL.EMP_NO = 'C04106'
+  -- AND AL.COMPANY_CODE = 'XA'
+   AND AL.APP_TIME >= TO_DATE('200930', 'YYMMDD')
+   AND AL.OPERATION_TYPE IN
+       ( '03', '04', '05', '06', '07', '08')
+   --AND AL.MT_SLIP_NO ='S200908039'
+ ORDER BY AL.APP_TIME;
+ 
+ 
+ SELECT FE.LDAP_ID,FE.EMP_NO||FE.EMP_NAME, FP.*
+  FROM fix_empdata FE, fix_phone_data FP
+ WHERE UPPER(FE.LDAP_ID) = UPPER(FP.ACCOUNT)
+  AND FE.EMP_NO IN ('C04106')
+  --AND FE.EMP_NAME='C05333'
+   and FP.CREATE_DATE > sysdate -10
+ ORDER BY FP.ACCOUNT, FP.CREATE_DATE DESC;
+ 
+ -- EAI LOG
+ SELECT * FROM EAI_TRANSMIT_MESSAGE_LOG EL WHERE EL.CREATE_EMP_NO ='C04106' AND EL.CREATE_TIME >= TO_DATE('201001','YYMMDD')  AND EL.FUNC_CODE='XIARW' ORDER BY EL.CREATE_TIME
+ 
+ SELECT * FROM FIX_APP_WORK_RECORD WR WHERE WR.MT_SLIP_NO='R200831009' and WR.CREATE_EMP_NO ='C04106'
+ 
+ UPDATE TBS_MAJ.FIX_APP_WORK_RECORD WR SET WR.COMPLETED_TIME = NULL , WR.FIX_SERVICE_FLAG ='O' WHERE WR.BU_CODE ='CN' AND WR.MT_SLIP_NO='R200831009' AND WR.WORK_LINE_NO ='1' AND WR.SEQ_NO =287466
+ 
+  SELECT FS.WORK_START_TIME,FS.* FROM FIX_SERVICE FS WHERE SLIP_NO='R200831009' AND EMP_NO='C04106' ORDER BY WORK_START_DATE DESC;
+2020/10/3 上午 11:01:38
+
+
+7922700 2020/10/1 下午 08:17:38
+SELECT * FROM FIX_APP_EMP_LOCATION AL WHERE AL.SEQ_NO='7922700';
+UPDATE TBS_MAJ.FIX_APP_EMP_LOCATION AL SET AL.WORK_START_TIME = TO_DATE('201001 20:17:38','YYMMDD HH24:MI:SS') WHERE AL.SEQ_NO='7922700'
+
+
+2020/10/2 下午 09:29:41
+
+2020/10/2 下午 09:29:48
+
+ 
+ 
+ 
+ -- 工時紀錄
+ 
+ SELECT FS.WORK_START_TIME,FS.* FROM FIX_SERVICE FS WHERE SLIP_NO='R200831009' AND EMP_NO='C04106' ORDER BY WORK_START_DATE DESC;
+  
+ 
+ WORK_START_TIME : 2020/10/2 上午 08:05:29 
